@@ -20,8 +20,10 @@ and desktop PCs. One folder per package of the OBS project
 
 Notes:
 
-- `kernel-ogc` / `kernel-tkg`: the version lines and source tarballs are
-  updated on OBS by the kernel updater workflow; OBS has the current values.
+- `kernel-ogc`, `kernel-tkg`, `jupiter-hw-support`, `steam-jupiter-bootstrap`:
+  versions and sources are updated on OBS by
+  [ogc-kernel-updater-obs](https://github.com/ocelado-linux/ogc-kernel-updater-obs);
+  OBS has the current values.
 - Large or generated sources (kernel tarballs, the OBS signing key) are not
   stored here.
 - Each package keeps its own `License:`; third-party content (e.g. the IBM
