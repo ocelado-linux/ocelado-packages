@@ -1,0 +1,12 @@
+[Unit]
+Description=Ocelado Linux first boot setup (user groups)
+ConditionPathExists=!/var/lib/ocelado/firstboot.done
+After=local-fs.target systemd-sysusers.service
+Before=display-manager.service sddm.service steamos-startup.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/ocelado/firstboot
+
+[Install]
+WantedBy=multi-user.target

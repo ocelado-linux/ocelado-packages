@@ -1,0 +1,16 @@
+#!/bin/bash
+# Ocelado Linux first boot: give the user created by the installer the
+# usual desktop/gaming groups and, if nobody is an administrator yet,
+# the wheel group (sudo/polkit with the user's own password).
+set -u
+user="$(getent passwd | awk -F: '$3>=1000 && $3<60000 && $7 !~ /(nologin|false)$/ {print $1; exit}')"
+[ -n "$user" ] || exit 0
+for g in video audio input render lact; do
+    getent group "$g" >/dev/null && usermod -aG "$g" "$user"
+done
+members="$(getent group wheel | cut -d: -f4)"
+if getent group wheel >/dev/null && [ -z "$members" ]; then
+    usermod -aG wheel "$user"
+fi
+mkdir -p /var/lib/ocelado
+touch /var/lib/ocelado/firstboot.done

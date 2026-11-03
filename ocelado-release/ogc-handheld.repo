@@ -1,0 +1,9 @@
+[ogc-handheld]
+name=Ocelado Linux (home:Luthenis:ogc-handheld)
+enabled=1
+autorefresh=1
+priority=90
+baseurl=https://download.opensuse.org/repositories/home:/Luthenis:/ogc-handheld/openSUSE_Tumbleweed/
+type=rpm-md
+gpgcheck=1
+gpgkey=https://download.opensuse.org/repositories/home:/Luthenis:/ogc-handheld/openSUSE_Tumbleweed/repodata/repomd.xml.key

@@ -1,0 +1,8 @@
+<services>
+  <!-- Valve's own fully bootstrapped Steam client (Steam Deck stable branch),
+       the same file SteamOS ships in steam-jupiter-stable. Updated by the
+       ocelado GitHub workflow from Valve's PKGBUILD (evlaV/jupiter mirror). -->
+  <service name="download_url">
+    <param name="url">https://steamdeck-packages.steamos.cloud/misc/steam-snapshots/steam_jupiter_stable_bootstrapped_20251031.0.tar.xz</param>
+  </service>
+</services>

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Steam (Desktop Mode)
+Comment=Start Steam in the background in Desktop Mode, like SteamOS
+Exec=/usr/bin/steam-desktop-autostart
+Icon=steam
+OnlyShowIn=KDE;
+X-KDE-autostart-phase=2

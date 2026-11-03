@@ -1,0 +1,45 @@
+#!/bin/bash
+# Apply Ocelado Linux branding on top of openSUSE Tumbleweed's os-release.
+NAME="Ocelado Linux"
+
+f=/usr/lib/os-release
+if [ -f "$f" ]; then
+    sed -i --follow-symlinks \
+        -e "s/^NAME=.*/NAME=\"$NAME\"/" \
+        -e "s/^PRETTY_NAME=.*/PRETTY_NAME=\"$NAME\"/" \
+        "$f"
+    if grep -q '^LOGO=' "$f"; then
+        sed -i --follow-symlinks 's/^LOGO=.*/LOGO="ocelado-logo"/' "$f"
+    else
+        echo 'LOGO="ocelado-logo"' >> "$f"
+    fi
+    # edition, from the Ocelado configuration installed
+    if [ -e /usr/lib/systemd/system-preset/81-ocelado-desktop.preset ]; then
+        variant=Desktop
+    else
+        variant=Handheld
+    fi
+    setkey() {   # setkey KEY VALUE: replace or append KEY="VALUE"
+        if grep -q "^$1=" "$f"; then
+            sed -i --follow-symlinks "s|^$1=.*|$1=\"$2\"|" "$f"
+        else
+            echo "$1=\"$2\"" >> "$f"
+        fi
+    }
+    setkey VARIANT "$variant"
+    setkey VARIANT_ID "$(echo "$variant" | tr 'A-Z' 'a-z')"
+    # Ocelado Linux release (VERSION_ID stays the Tumbleweed snapshot date)
+    setkey IMAGE_VERSION "@OCELADO_VERSION@"
+fi
+
+# GRUB menu entries ("Ocelado Linux" instead of "openSUSE Tumbleweed");
+# applied on the next grub2-mkconfig (kernel update or transactional-update grub.cfg)
+g=/etc/default/grub
+if [ -f "$g" ]; then
+    if grep -q '^GRUB_DISTRIBUTOR=' "$g"; then
+        sed -i "s/^GRUB_DISTRIBUTOR=.*/GRUB_DISTRIBUTOR=\"$NAME\"/" "$g"
+    else
+        echo "GRUB_DISTRIBUTOR=\"$NAME\"" >> "$g"
+    fi
+fi
+exit 0

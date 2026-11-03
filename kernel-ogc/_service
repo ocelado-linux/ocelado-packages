@@ -1,0 +1,12 @@
+<services>
+  <service name="download_url">
+    <param name="url">https://github.com/OpenGamingCollective/linux/archive/refs/tags/v7.2.9-ogc1.tar.gz</param>
+    <param name="filename">linux-7.2.9-ogc1.tar.gz</param>
+  </service>
+  <service name="download_url">
+    <param name="url">https://raw.githubusercontent.com/OpenGamingCollective/kernel-packages/main/config/ogc.config.set</param>
+  </service>
+  <service name="download_url">
+    <param name="url">https://raw.githubusercontent.com/OpenGamingCollective/kernel-packages/main/config/ogc.config.unset</param>
+  </service>
+</services>

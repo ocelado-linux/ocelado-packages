@@ -1,0 +1,15 @@
+[Unit]
+Description=Ocelado Linux: add the Flathub Flatpak repository
+# runs on every boot until Flathub is configured (needs network once)
+ConditionPathExists=/usr/bin/flatpak
+ConditionPathExists=!/var/lib/flatpak/repo/flathub.trustedkeys.gpg
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/flatpak remote-add --system --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+TimeoutStartSec=2min
+
+[Install]
+WantedBy=multi-user.target

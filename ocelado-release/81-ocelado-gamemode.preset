@@ -1,0 +1,6 @@
+# Ocelado Linux handhelds (Steam Game Mode)
+# session selection + SDDM autologin of the first user (deckifier)
+enable steamos-startup.service
+enable inputplumber.service
+# Steam Deck only (ignored where the unit does not exist)
+enable jupiter-fan-control.service

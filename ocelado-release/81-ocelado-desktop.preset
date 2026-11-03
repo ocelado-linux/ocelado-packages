@@ -1,0 +1,6 @@
+# Ocelado Linux Desktop
+# daily background updates in a new snapshot, applied on the next reboot
+enable transactional-update.timer
+enable ocelado-kernel-select.service
+# GPU control daemon (LACT)
+enable lactd.service

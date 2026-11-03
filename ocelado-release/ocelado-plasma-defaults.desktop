@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Ocelado desktop defaults
+Comment=Applies the Ocelado wallpaper and launcher icon on the first login
+Exec=/usr/libexec/ocelado/plasma-defaults
+OnlyShowIn=KDE;
+NoDisplay=true
+X-KDE-autostart-phase=2

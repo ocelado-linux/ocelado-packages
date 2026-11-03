@@ -1,0 +1,14 @@
+<services>
+  <service name="obs_scm">
+    <param name="url">https://github.com/ocelado-linux/deckifier.git</param>
+    <param name="scm">git</param>
+    <param name="revision">656397a043ca095689a075003e3fb47a757ed9a2</param>
+    <param name="versionformat">%cd.%h</param>
+  </service>
+  <service name="tar" mode="buildtime"/>
+  <service name="recompress" mode="buildtime">
+    <param name="file">*.tar</param>
+    <param name="compression">xz</param>
+  </service>
+  <service name="set_version" mode="buildtime"/>
+</services>

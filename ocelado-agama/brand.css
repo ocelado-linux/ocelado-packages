@@ -1,0 +1,18 @@
+/* Ocelado Linux appearance for the Agama installer (all products).
+   Colors from the Ocelado logo: green #147C5E. */
+
+/* Light scheme. */
+:root:where(:not(.pf-v6-theme-dark)) {
+  --agm-t--brand--color: #147c5e;
+  --agm-t--brand--text--color: #fff;
+  --agm-t--link--color: #085040;
+  --agm-t--surface--color--raised: #e6f2ed;
+}
+
+/* Dark scheme. */
+:root:where(.pf-v6-theme-dark) {
+  --agm-t--brand--color: #3fbf93;
+  --agm-t--brand--text--color: #04231a;
+  --agm-t--link--color: #8fdcc0;
+  --agm-t--surface--color--raised: #10261f;
+}

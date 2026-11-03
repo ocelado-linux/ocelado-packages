@@ -1,0 +1,20 @@
+#!/bin/bash
+# Start Steam in the background in Desktop Mode (like SteamOS).
+# Steam is an X11 app (Xwayland). At autostart time the systemd user
+# environment may still hold DISPLAY/XAUTHORITY from the previous session
+# (Game Mode <-> Desktop switches), so take them from the running Xwayland
+# itself: "Xwayland :N -auth /run/user/UID/xauth_XXXX ...".
+for _ in $(seq 60); do
+    args="$(pgrep -u "$UID" -a -x Xwayland | tail -n1)"
+    disp="$(sed -n 's/.*Xwayland \(:[0-9]\+\).*/\1/p' <<<"$args")"
+    auth="$(sed -n 's/.* -auth \([^ ]\+\).*/\1/p' <<<"$args")"
+    if [ -n "$disp" ] && [ -S "/tmp/.X11-unix/X${disp#:}" ] \
+       && { [ -z "$auth" ] || [ -s "$auth" ]; }; then
+        export DISPLAY="$disp"
+        [ -n "$auth" ] && export XAUTHORITY="$auth"
+        break
+    fi
+    sleep 1
+done
+sleep 2
+exec steam -silent "$@"

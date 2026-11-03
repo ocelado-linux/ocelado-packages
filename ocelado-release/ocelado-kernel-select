@@ -1,0 +1,32 @@
+#!/bin/bash
+# Ocelado Linux Desktop: install the linux-tkg build matching this CPU.
+#   kernel-tkgv3: x86-64-v3 (AVX2...)   kernel-tkgv2: everything else
+# The installer always puts kernel-tkgv2 (runs everywhere); on a v3 CPU
+# this swaps it for kernel-tkgv3 in a new snapshot, active on the next
+# reboot. Retried on every boot until it succeeds (e.g. no network yet).
+set -u
+done_flag=/var/lib/ocelado/kernel-selected
+
+level=v2
+if /usr/lib64/ld-linux-x86-64.so.2 --help 2>/dev/null \
+        | grep -q 'x86-64-v3 (supported'; then
+    level=v3
+fi
+other=v2; [ "$level" = v2 ] && other=v3
+echo "CPU level: x86-64-$level"
+
+if rpm -q "kernel-tkg$level" >/dev/null 2>&1 && ! rpm -q "kernel-tkg$other" >/dev/null 2>&1; then
+    echo "kernel-tkg$level already installed"
+else
+    echo "Installing kernel-tkg$level (replacing kernel-tkg$other)"
+    # "-pkg" = remove pkg in the same zypper transaction; "--" first so
+    # zypper does not read it as an option (zypper(8), install command)
+    args=("kernel-tkg$level")
+    rpm -q "kernel-tkg$other" >/dev/null 2>&1 && args+=("-kernel-tkg$other")
+    # --gpg-auto-import-keys: only the Tumbleweed and Ocelado repos are
+    # configured; on a fresh system nobody is there to accept their keys
+    transactional-update --non-interactive --continue run \
+        zypper --non-interactive --gpg-auto-import-keys install -- "${args[@]}" || exit 1
+fi
+mkdir -p /var/lib/ocelado
+echo "$level" > "$done_flag"

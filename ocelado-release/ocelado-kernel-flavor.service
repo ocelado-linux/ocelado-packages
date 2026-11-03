@@ -1,0 +1,10 @@
+[Unit]
+Description=Ocelado Linux: remember the kernel type booted (ogc/tkg) for GRUB
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/ocelado/grub-default --record
+
+[Install]
+WantedBy=multi-user.target

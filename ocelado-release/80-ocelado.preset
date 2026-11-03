@@ -1,0 +1,10 @@
+# Ocelado Linux: services enabled on every edition
+enable sddm.service
+enable NetworkManager.service
+enable bluetooth.service
+enable chronyd.service
+enable power-profiles-daemon.service
+enable sshd.service
+enable ocelado-firstboot.service
+enable ocelado-kernel-flavor.service
+enable ocelado-flathub.service

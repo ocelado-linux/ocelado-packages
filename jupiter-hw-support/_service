@@ -1,0 +1,19 @@
+<services>
+  <service name="obs_scm">
+    <param name="scm">git</param>
+    <param name="url">https://github.com/evlav/jupiter-hw-support.git</param>
+    <!-- SteamOS 3.8 stable branch: last series with the steamos-* polkit
+         helpers (newer tags renamed them to holo-*) -->
+    <param name="revision">jupiter-3.8-20260807.1</param>
+    <param name="versionformat">@PARENT_TAG@</param>
+    <param name="versionrewrite-pattern">jupiter-3\.8-(.*)</param>
+    <param name="versionrewrite-replacement">\1</param>
+    <param name="filename">jupiter-hw-support</param>
+  </service>
+  <service name="tar" mode="buildtime"/>
+  <service name="recompress" mode="buildtime">
+    <param name="file">*.tar</param>
+    <param name="compression">xz</param>
+  </service>
+  <service name="set_version" mode="buildtime"/>
+</services>

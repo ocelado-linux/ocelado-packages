@@ -1,0 +1,5 @@
+# Ocelado Linux: kernel modules loaded at boot for gaming
+# NTSYNC: native Windows NT synchronization primitives for Wine/Proton
+ntsync
+# BBR TCP congestion control (see 90-ocelado-gaming.conf)
+tcp_bbr

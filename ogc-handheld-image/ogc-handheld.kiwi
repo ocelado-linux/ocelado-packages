@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- OBS-Profiles: @BUILD_FLAVOR@ -->
+<!--
+  ogc-handheld: SteamOS-like openSUSE Tumbleweed image with the OGC kernel.
+
+  Based on the KIWI MicroOS test description (OSInside/kiwi
+  build-tests/x86/tumbleweed/test-image-MicroOS): immutable btrfs root
+  (read-only snapshots, transactional-update), OEM disk with install ISO.
+
+  Profiles (selected by _multibuild flavor):
+    Generic -> base + KDE + Game Mode + AOKZOE/OneXPlayer support
+    Deck    -> base + KDE + Game Mode + Steam Deck hardware support
+    Desktop -> base + KDE only (no Game Mode): desktop PCs and laptops
+-->
+<image schemaversion="7.5" name="ocelado-linux" displayname="Ocelado Linux">
+    <description type="system">
+        <author>Javier Taboada</author>
+        <contact>tabo120@gmail.com</contact>
+        <specification>SteamOS-like openSUSE Tumbleweed with the OGC kernel</specification>
+    </description>
+    <profiles>
+        <profile name="Generic" description="ogc-handheld for generic AMD handhelds (AOKZOE/OneXPlayer)"/>
+        <profile name="Deck" description="ogc-handheld with Steam Deck hardware support"/>
+        <profile name="Desktop" description="Ocelado Linux KDE desktop, without Steam Game Mode"/>
+    </profiles>
+    <preferences>
+        <version>0.2.0</version>
+        <packagemanager>zypper</packagemanager>
+        <bootloader-theme>openSUSE</bootloader-theme>
+        <rpm-excludedocs>true</rpm-excludedocs>
+        <rpm-check-signatures>false</rpm-check-signatures>
+        <locale>es_ES</locale>
+        <keytable>es</keytable>
+        <timezone>Europe/Madrid</timezone>
+        <type
+            image="oem"
+            filesystem="btrfs"
+            firmware="uefi"
+            installiso="true"
+            installboot="install"
+            kernelcmdline="quiet splash security=selinux selinux=1 enforcing=0"
+            bootpartition="false"
+            devicepersistency="by-uuid"
+            btrfs_root_is_snapshot="true"
+            btrfs_root_is_readonly_snapshot="true"
+            btrfs_root_is_subvolume="true"
+            btrfs_quota_groups="true"
+            efipartsize="512"
+        >
+            <oemconfig>
+                <oem-unattended>false</oem-unattended>
+                <oem-resize>true</oem-resize>
+                <oem-swap>false</oem-swap>
+            </oemconfig>
+            <bootloader name="grub2" timeout="3"/>
+            <systemdisk>
+                <volume name="home"/>
+                <volume name="root"/>
+                <volume name="opt"/>
+                <volume name="srv"/>
+                <volume name="boot/grub2/i386-pc"/>
+                <volume name="boot/grub2/x86_64-efi" mountpoint="boot/grub2/x86_64-efi"/>
+                <volume name="boot/writable"/>
+                <volume name="usr/local"/>
+                <volume name="var" copy_on_write="false"/>
+            </systemdisk>
+            <installmedia>
+                <initrd action="omit">
+                    <dracut module="combustion"/>
+                    <dracut module="ignition"/>
+                </initrd>
+            </installmedia>
+        </type>
+    </preferences>
+    <users>
+        <!-- default user, password "gamer" (change it after first boot with passwd) -->
+        <user password="$6$ogchandheld$fk8w4XqY5o1inQPqyDAgBXbTPMemMuOU2OWcrrwjTgbfhC.viOOpRYYWBL2AXNmApsSC5rRi9Fh/AZgmVin0t0" pwdformat="encrypted" home="/home/gamer" name="gamer" groups="users" shell="/bin/bash" id="1000"/>
+        <!-- root login disabled: use sudo with the gamer password -->
+        <user password="!*" home="/root" name="root" groups="root"/>
+    </users>
+    <repository type="rpm-md">
+        <source path="obsrepositories:/"/>
+    </repository>
+    <packages type="image">
+        <!-- ogc-handheld package selection -->
+        <package name="patterns-ogc-handheld-base"/>
+        <package name="patterns-ogc-handheld-kde"/>
+        <!-- SDDM is the only display manager: never install LightDM -->
+        <ignore name="lightdm"/>
+        <ignore name="lightdm-kde-greeter"/>
+        <ignore name="lightdm-gtk-greeter"/>
+        <!-- immutable root (MicroOS) -->
+        <package name="read-only-root-fs"/>
+        <package name="microos-tools"/>
+        <package name="snapper"/>
+        <!-- bootloader: classic GRUB2 with snapper snapshots in the menu -->
+        <package name="grub2-x86_64-efi"/>
+        <!-- needed by KIWI to make the install ISO bootable (hybrid BIOS/UEFI) -->
+        <package name="grub2-i386-pc"/>
+        <package name="grub2-snapper-plugin"/>
+        <package name="grub2-branding-openSUSE"/>
+        <package name="shim"/>
+        <package name="efibootmgr"/>
+        <!-- KIWI OEM deployment helpers -->
+        <package name="dracut-kiwi-oem-repart"/>
+        <package name="dracut-kiwi-oem-dump"/>
+        <package name="squashfs"/>
+        <!-- SSH server, enabled by default (see config.sh) -->
+        <package name="openssh-server"/>
+        <!-- SELinux relabel on first boot -->
+        <package name="selinux-autorelabel"/>
+    </packages>
+    <!-- generic handhelds (AOKZOE/OneXPlayer...): SteamOS helpers from deckifier -->
+    <packages type="image" profiles="Generic">
+        <package name="patterns-ogc-handheld-aokzoe"/>
+        <!-- generic Steam helpers (on the Deck they come from jupiter-hw-support) -->
+        <package name="deckifier-steamos-helpers"/>
+    </packages>
+    <packages type="image" profiles="Deck">
+        <package name="patterns-ogc-handheld-deck"/>
+    </packages>
+    <!-- desktop PCs / laptops: KDE Plasma only, no gamescope session.
+         Pattern ogc_handheld_desktop: linux-tkg kernel (v2 installed, swapped
+         for v3 on first boot when the CPU supports it), SDDM login screen,
+         background updates -->
+    <packages type="image" profiles="Desktop">
+        <package name="patterns-ogc-handheld-desktop"/>
+        <!-- explicit kernel (OBS does not pick between alternatives);
+             swapped for kernel-tkgv3 on first boot when the CPU supports it -->
+        <package name="kernel-tkgv2"/>
+    </packages>
+    <packages type="bootstrap">
+        <package name="gawk"/>
+        <package name="openssl"/>
+        <package name="diffutils"/>
+        <package name="coreutils"/>
+        <package name="grep"/>
+        <package name="gzip"/>
+        <package name="xz"/>
+        <package name="libz1"/>
+        <package name="shadow"/>
+        <package name="filesystem"/>
+        <package name="glibc-locale"/>
+        <package name="cracklib-dict-full"/>
+        <package name="ca-certificates"/>
+        <package name="ca-certificates-mozilla"/>
+        <package name="openSUSE-release"/>
+    </packages>
+</image>

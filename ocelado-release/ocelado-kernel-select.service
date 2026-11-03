@@ -1,0 +1,13 @@
+[Unit]
+Description=Ocelado Linux: select the linux-tkg kernel for this CPU (v2/v3)
+ConditionPathExists=!/var/lib/ocelado/kernel-selected
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/ocelado/kernel-select
+TimeoutStartSec=30min
+
+[Install]
+WantedBy=multi-user.target

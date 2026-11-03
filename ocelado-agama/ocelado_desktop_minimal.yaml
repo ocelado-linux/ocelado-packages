@@ -1,0 +1,82 @@
+# Ocelado Linux product for the Agama installer
+# (based on Kalpa: immutable Plasma desktop on openSUSE Tumbleweed)
+id: Ocelado_Desktop_Minimal
+name: Ocelado Linux Desktop Minimal
+description: "Bare KDE Plasma (Konsole, Dolphin and Flatpak only) for users who want to build their own setup, on an immutable openSUSE Tumbleweed base with the linux-tkg (BORE) and OGC kernels."
+icon: Ocelado.svg
+translations:
+  description:
+    es: "KDE Plasma mínimo (solo Konsole, Dolphin y Flatpak) para quien quiera montarse su propio escritorio, sobre una base inmutable de openSUSE Tumbleweed con los kernels linux-tkg (BORE) y OGC."
+software:
+  installation_repositories:
+    - url: https://download.opensuse.org/tumbleweed/repo/oss/
+      archs: x86_64
+    - url: https://download.opensuse.org/tumbleweed/repo/non-oss/
+      archs: x86_64
+    - url: https://download.opensuse.org/update/tumbleweed/
+      archs: x86_64
+    - url: https://download.opensuse.org/repositories/home:/Luthenis:/ogc-handheld/openSUSE_Tumbleweed/
+      archs: x86_64
+  mandatory_patterns:
+    - ogc_handheld_desktop_minimal
+  optional_patterns: []
+  user_patterns: []
+  mandatory_packages:
+    - NetworkManager
+    - openSUSE-repos-Tumbleweed
+    - sudo-policy-wheel-auth-self
+    # immutable root, snapshots in the GRUB menu (as the KIWI images)
+    - read-only-root-fs
+    - snapper
+    - grub2-snapper-plugin
+    - grub2-branding-openSUSE
+    - openssh-server
+  optional_packages: [ os-prober ]
+  base_product: openSUSE
+  # default kernel; the pattern adds the second one (both selectable in GRUB)
+  kernel: kernel-tkgv2
+
+storage:
+  space_policy: delete
+  # a single btrfs for everything (/var and /home are subvolumes), as the
+  # KIWI images: /home holds the Steam library, so it must not be capped
+  volumes:
+    - "/"
+  volume_templates:
+    - mount_path: "/"
+      filesystem: btrfs
+      btrfs:
+        snapshots: true
+        read_only: true
+        default_subvolume: "@"
+        subvolumes:
+          - path: home
+          - path: opt
+          - path: root
+          - path: srv
+          - path: usr/local
+          - path: boot/writable
+          - path: var
+            copy_on_write: false
+      # the whole disk (it also holds /home)
+      size:
+        auto: false
+        min: 20 GiB
+        max: unlimited
+      outline:
+        required: true
+        snapshots_configurable: false
+        filesystems:
+          - btrfs
+    - mount_path: "/var"
+      filesystem: btrfs
+      mount_options:
+        - "x-initrd.mount"
+        - "nodatacow"
+      size:
+        auto: false
+        min: 5 GiB
+      outline:
+        required: false
+        filesystems:
+          - btrfs

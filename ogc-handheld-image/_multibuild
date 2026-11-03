@@ -1,0 +1,5 @@
+<multibuild>
+  <flavor>Generic</flavor>
+  <flavor>Deck</flavor>
+  <flavor>Desktop</flavor>
+</multibuild>

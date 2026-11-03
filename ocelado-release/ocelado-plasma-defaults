@@ -1,0 +1,38 @@
+#!/bin/bash
+# Ocelado Linux: apply the desktop defaults once per user, on the first
+# Plasma login: Ocelado wallpaper and the Ocelado logo on the application
+# launcher (start menu). Users can change both afterwards as usual; this
+# never runs again for them (marker file below).
+MARKER="${XDG_CONFIG_HOME:-$HOME/.config}/ocelado-plasma-defaults.done"
+[ -e "$MARKER" ] && exit 0
+
+# wait for plasmashell to be on the session bus (max ~60 s)
+for _ in $(seq 60); do
+    dbus-send --session --print-reply --dest=org.freedesktop.DBus / \
+        org.freedesktop.DBus.NameHasOwner string:org.kde.plasmashell 2>/dev/null \
+        | grep -q 'boolean true' && break
+    sleep 1
+done
+sleep 3
+
+script='
+desktops().forEach(function (d) {
+    d.wallpaperPlugin = "org.kde.image";
+    d.currentConfigGroup = ["Wallpaper", "org.kde.image", "General"];
+    d.writeConfig("Image", "file:///usr/share/wallpapers/Ocelado/");
+});
+panels().forEach(function (p) {
+    p.widgets().forEach(function (w) {
+        if (w.type == "org.kde.plasma.kickoff" || w.type == "org.kde.plasma.kicker"
+            || w.type == "org.kde.plasma.kickerdash") {
+            w.currentConfigGroup = ["General"];
+            w.writeConfig("icon", "ocelado-logo");
+            w.reloadConfig();
+        }
+    });
+});
+'
+if dbus-send --session --print-reply --dest=org.kde.plasmashell /PlasmaShell \
+        org.kde.PlasmaShell.evaluateScript string:"$script" >/dev/null; then
+    mkdir -p "$(dirname "$MARKER")" && touch "$MARKER"
+fi

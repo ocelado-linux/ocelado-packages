@@ -1,0 +1,109 @@
+#!/bin/bash
+# Ocelado Linux: GRUB boots the kernel the user chose last.
+#  - GRUB_DEFAULT=saved + GRUB_SAVEDEFAULT=true: GRUB remembers the entry
+#    picked in the menu. GRUB cannot write files on btrfs, so it stores it
+#    in the reserved area of the btrfs header (env_block=512+1 in grubenv).
+#    env_block is only added when grub2-editenv creates grubenv: if it is
+#    missing ("error: sparse file not allowed" at every boot), grubenv is
+#    created again here. Without env_block (btrfs on several disks, RAID,
+#    LVM, encryption) GRUB_DEFAULT=0 is used instead.
+#  - the remembered entry names a kernel version, so after a kernel update
+#    it is gone and GRUB falls back to the first entry: GRUB_TOP_LEVEL puts
+#    the newest kernel of the type booted last (ogc / tkg, recorded at boot
+#    by ocelado-kernel-flavor.service) first
+# Default type before any boot: tkg on Desktop, ogc on handhelds.
+# Called by rpm triggers when kernels are installed/removed in /boot.
+#   --refresh   also regenerate grub.cfg if anything changed (now or in an
+#               earlier call of the same transaction)
+#   --record    (at boot) save the type of the running kernel
+set -u
+if [ "${1:-}" = --record ]; then
+    case "$(uname -r)" in
+        *-ogc)   t=ogc ;;
+        *-tkgv*) t=tkg ;;
+        *)       exit 0 ;;
+    esac
+    mkdir -p /var/lib/ocelado
+    echo "$t" > /var/lib/ocelado/kernel-flavor
+    exit 0
+fi
+f=/etc/default/grub
+[ -f "$f" ] || exit 0
+
+flavor="$(cat /var/lib/ocelado/kernel-flavor 2>/dev/null)"
+if [ -z "$flavor" ]; then
+    if [ -e /usr/lib/systemd/system-preset/81-ocelado-desktop.preset ]; then
+        flavor=tkg
+    else
+        flavor=ogc
+    fi
+fi
+
+newest() { ls -1 $1 2>/dev/null | sort -V | tail -n1; }
+case "$flavor" in
+    tkg) top="$(newest '/boot/vmlinuz-*-tkgv[0-9]')"
+         [ -n "$top" ] || top="$(newest '/boot/vmlinuz-*-ogc')" ;;
+    *)   top="$(newest '/boot/vmlinuz-*-ogc')"
+         [ -n "$top" ] || top="$(newest '/boot/vmlinuz-*-tkgv[0-9]')" ;;
+esac
+
+changed=0
+set_var() {   # set_var NAME VALUE (quoted value)
+    local line="$1=\"$2\""
+    grep -qxF "$line" "$f" && return 0
+    if grep -q "^$1=" "$f"; then
+        sed -i "s|^$1=.*|$line|" "$f"
+    else
+        printf '%s\n' "$line" >> "$f"
+    fi
+    changed=1
+}
+if ! grep -q '^# Ocelado Linux: kernel selection' "$f"; then
+    printf '# Ocelado Linux: kernel selection (managed by ocelado-release)\n' >> "$f"
+fi
+# Ocelado GRUB theme (grub2-branding-openSUSE updates would set theirs back)
+theme=/boot/grub2/themes/Ocelado/theme.txt
+[ -f "$theme" ] && set_var GRUB_THEME "$theme"
+# grubenv with env_block (see above); keeps the variables already set
+env=/boot/grub2/grubenv
+env_block_ok() {
+    command -v grub2-editenv >/dev/null 2>&1 && [ -d /boot/grub2 ] || return 1
+    grub2-editenv "$env" list 2>/dev/null | grep -q '^env_block=' && return 0
+    local vars
+    vars="$(grub2-editenv "$env" list 2>/dev/null | grep -v '^env_block=')"
+    rm -f "$env"
+    grub2-editenv "$env" unset dummy 2>/dev/null
+    printf '%s\n' "$vars" | while IFS= read -r kv; do
+        [ -n "$kv" ] && grub2-editenv "$env" set "$kv" 2>/dev/null
+    done
+    grub2-editenv "$env" list 2>/dev/null | grep -q '^env_block='
+}
+if env_block_ok; then
+    set_var GRUB_DEFAULT saved
+    set_var GRUB_SAVEDEFAULT true
+else
+    set_var GRUB_DEFAULT 0
+    if grep -q '^GRUB_SAVEDEFAULT=' "$f"; then
+        sed -i '/^GRUB_SAVEDEFAULT=/d' "$f"
+        changed=1
+    fi
+fi
+[ -n "$top" ] && set_var GRUB_TOP_LEVEL "$top"
+
+# grub.cfg is regenerated once, at the end of the rpm transaction
+# (--refresh): remember a change made by a file trigger until then
+pending=/var/lib/rpm-state/ocelado/grub-refresh
+if [ "$changed" = 1 ]; then
+    echo "ocelado: GRUB default kernel type '$flavor' -> ${top:-none}"
+    mkdir -p "${pending%/*}" && touch "$pending"
+fi
+[ "${1:-}" = --refresh ] && [ -e "$pending" ] || exit 0
+rm -f "$pending"
+if :; then
+    if [ -x /usr/sbin/update-bootloader ]; then
+        /usr/sbin/update-bootloader --refresh || :
+    elif [ -x /usr/sbin/grub2-mkconfig ] && [ -d /boot/grub2 ]; then
+        /usr/sbin/grub2-mkconfig -o /boot/grub2/grub.cfg || :
+    fi
+fi
+exit 0

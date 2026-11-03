@@ -1,0 +1,51 @@
+#!/bin/bash
+# Ocelado Linux: one-time system setup, run when ocelado-release is first
+# installed (image build, Agama installation). Replaces the KIWI config.sh.
+#   - SDDM as display manager, graphical boot
+#   - services from the Ocelado systemd presets
+# Works offline in a chroot (systemctl only touches symlinks there).
+
+# display manager: SDDM
+f=/etc/sysconfig/displaymanager
+if [ -f "$f" ] && grep -q '^DISPLAYMANAGER=' "$f"; then
+    sed -i 's/^DISPLAYMANAGER=.*/DISPLAYMANAGER="sddm"/' "$f"
+else
+    echo 'DISPLAYMANAGER="sddm"' >> "$f"
+fi
+if [ -e /usr/lib/X11/displaymanagers/sddm ]; then
+    update-alternatives --set default-displaymanager \
+        /usr/lib/X11/displaymanagers/sddm >/dev/null 2>&1 || :
+fi
+systemctl set-default graphical.target >/dev/null 2>&1 || :
+
+# snapper: register the root config if the installer created it but left
+# SNAPPER_CONFIGS empty (seen with Agama), otherwise transactional-update
+# cannot create snapshots ("The config 'root' does not exist")
+sc=/etc/sysconfig/snapper
+if [ -f /etc/snapper/configs/root ] && [ -f "$sc" ] \
+   && ! grep -qE '^SNAPPER_CONFIGS="[^"]*\broot\b' "$sc"; then
+    if grep -q '^SNAPPER_CONFIGS=""' "$sc"; then
+        sed -i 's/^SNAPPER_CONFIGS=""/SNAPPER_CONFIGS="root"/' "$sc"
+    elif grep -q '^SNAPPER_CONFIGS="' "$sc"; then
+        sed -i 's/^SNAPPER_CONFIGS="/SNAPPER_CONFIGS="root /' "$sc"
+    else
+        echo 'SNAPPER_CONFIGS="root"' >> "$sc"
+    fi
+fi
+
+# SELinux permissive, as the KIWI images (enforcing=0 on the kernel line):
+# the policy does not cover Steam/gamescope/deckifier yet
+if [ -f /etc/selinux/config ]; then
+    sed -i 's/^SELINUX=enforcing/SELINUX=permissive/' /etc/selinux/config
+fi
+
+# services: apply every Ocelado preset file present
+units=$(sed -n 's/^enable[[:space:]]\+//p' /usr/lib/systemd/system-preset/8[0-9]-ocelado*.preset 2>/dev/null)
+for u in $units; do
+    systemctl preset "$u" >/dev/null 2>&1 || :
+done
+# sddm.service has Alias=display-manager.service: make sure it is the one
+if [ -f /usr/lib/systemd/system/sddm.service ]; then
+    systemctl enable --force sddm.service >/dev/null 2>&1 || :
+fi
+exit 0
