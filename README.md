@@ -28,3 +28,16 @@ Notes:
   stored here.
 - Each package keeps its own `License:`; third-party content (e.g. the IBM
   Plymouth theme, GPL-3.0) keeps its license. Ocelado's own files: MIT.
+
+## Changing a package
+
+Edit the package folder here and push to `main`. The workflow
+`.github/workflows/sync-to-obs.yml` sends the changed folders to OBS
+(`scripts/sync-to-obs.sh`), which rebuilds them. To resend packages by hand:
+Actions → *Sync packages to OBS* → **Run workflow** (empty = all).
+
+Synced: `deckifier`, `ocelado-agama`, `ocelado-plasma-fixes`, `ocelado-release`,
+`patterns-ogc-handheld`, `plymouth-theme-ibm`. The sync only adds and updates
+files; to delete a file, also delete it on OBS.
+
+Needs the secrets `OBS_USER` and `OBS_PASSWORD` (organization or repository).

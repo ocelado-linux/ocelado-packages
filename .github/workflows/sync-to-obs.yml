@@ -1,0 +1,73 @@
+name: Sync packages to OBS
+
+# Every push to main sends the package folders it changed to the OBS project
+# home:Luthenis:ogc-handheld, which then rebuilds them.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      packages:
+        description: "Packages to sync (space separated, empty = all synced packages)"
+        required: false
+        default: ""
+
+concurrency:
+  group: obs-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      OBS_PROJECT: home:Luthenis:ogc-handheld
+      OBS_API: https://api.opensuse.org
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Packages changed by this push
+        id: pkgs
+        env:
+          BEFORE: ${{ github.event.before }}
+          INPUT: ${{ github.event.inputs.packages }}
+        run: |
+          if [ "${{ github.event_name }}" = workflow_dispatch ]; then
+            pkgs="$INPUT"
+          elif [ -z "$BEFORE" ] || [ "$BEFORE" = 0000000000000000000000000000000000000000 ]; then
+            pkgs=""
+          else
+            pkgs="$(git diff --name-only "$BEFORE" "$GITHUB_SHA" | grep / \
+                    | grep -v '^\.github/\|^scripts/' | cut -d/ -f1 | sort -u | tr '\n' ' ')"
+          fi
+          echo "packages=$pkgs" >> "$GITHUB_OUTPUT"
+          echo "Packages: ${pkgs:-<none>}"
+
+      - name: Install osc
+        if: steps.pkgs.outputs.packages != '' || github.event_name == 'workflow_dispatch'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq osc
+
+      - name: Configure osc credentials
+        if: steps.pkgs.outputs.packages != '' || github.event_name == 'workflow_dispatch'
+        env:
+          OBS_USER: ${{ secrets.OBS_USER }}
+          OBS_PASSWORD: ${{ secrets.OBS_PASSWORD }}
+        run: |
+          mkdir -p ~/.config/osc
+          cat > ~/.config/osc/oscrc <<OSCRC
+          [general]
+          apiurl = ${OBS_API}
+          [${OBS_API}]
+          user = ${OBS_USER}
+          pass = ${OBS_PASSWORD}
+          credentials_mgr_class = osc.credentials.PlaintextConfigFileCredentialsManager
+          OSCRC
+          chmod 600 ~/.config/osc/oscrc
+
+      - name: Sync to OBS
+        if: steps.pkgs.outputs.packages != '' || github.event_name == 'workflow_dispatch'
+        run: bash scripts/sync-to-obs.sh ${{ steps.pkgs.outputs.packages }}
