@@ -10,7 +10,7 @@
 #
 
 Name:           ocelado-release
-Version:        1.23
+Version:        1.24
 Release:        0
 # Ocelado Linux release shown in os-release (IMAGE_VERSION)
 %define ocelado_version 0.3
@@ -49,6 +49,8 @@ Source24:       ocelado-gaming.modules
 Source25:       90-ocelado-gaming.conf
 # KDE "About this System": Ocelado logo, release and website
 Source26:       kcm-about-distrorc
+# transactional-update: no automatic reboots after updates
+Source27:       50-ocelado-reboot.conf
 # fonts and scrollbar images are taken from the openSUSE theme
 BuildRequires:  grub2-branding-openSUSE
 # grub2-branding-openSUSE needs (grub2 or grub2-common): pick one
@@ -128,6 +130,7 @@ install -D -m 0644 %{SOURCE5} %{buildroot}%{_prefix}/lib/systemd/zram-generator.
 install -D -m 0644 %{SOURCE4} %{buildroot}%{_sysconfdir}/xdg/autostart/ocelado-plasma-defaults.desktop
 install -D -m 0644 %{SOURCE26} %{buildroot}%{_sysconfdir}/xdg/kcm-about-distrorc
 sed -i "s/@OCELADO_VERSION@/%{ocelado_version}/" %{buildroot}%{_sysconfdir}/xdg/kcm-about-distrorc
+install -D -m 0644 %{SOURCE27} %{buildroot}%{_prefix}/etc/transactional-update.conf.d/50-ocelado-reboot.conf
 # repository of Ocelado Linux (Tumbleweed repos come from openSUSE-repos)
 install -D -m 0644 %{SOURCE6} %{buildroot}%{_sysconfdir}/zypp/repos.d/ogc-handheld.repo
 # its signing key, next to the openSUSE ones (imported by the image build)
@@ -282,6 +285,8 @@ fi
 %dir %{_sysconfdir}/xdg/autostart
 %config %{_sysconfdir}/xdg/autostart/ocelado-plasma-defaults.desktop
 %config %{_sysconfdir}/xdg/kcm-about-distrorc
+%dir %{_prefix}/etc/transactional-update.conf.d
+%{_prefix}/etc/transactional-update.conf.d/50-ocelado-reboot.conf
 %dir %{_prefix}/lib/systemd
 %{_prefix}/lib/systemd/zram-generator.conf
 %dir %{_sysconfdir}/zypp
