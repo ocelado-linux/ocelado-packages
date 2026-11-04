@@ -10,7 +10,7 @@
 #
 
 Name:           ocelado-release
-Version:        1.25
+Version:        1.26
 Release:        0
 # Ocelado Linux release shown in os-release (IMAGE_VERSION)
 %define ocelado_version 0.3
@@ -78,6 +78,10 @@ Requires(posttrans): update-alternatives
 # ships its own /etc/xdg files (kcm-about-distrorc here, kwinrc in
 # deckifier-session-kde, baloofilerc in ocelado-baloo-off)
 Obsoletes:      plasma6-branding-openSUSE
+# /etc/ssl/cert.pem and /usr/lib/ssl/* point to the CA bundle; the brp symlink
+# check needs the target in the build root
+BuildRequires:  ca-certificates-mozilla
+Requires:       ca-certificates-mozilla
 BuildArch:      noarch
 
 %description
@@ -131,6 +135,15 @@ install -D -m 0644 %{SOURCE4} %{buildroot}%{_sysconfdir}/xdg/autostart/ocelado-p
 install -D -m 0644 %{SOURCE26} %{buildroot}%{_sysconfdir}/xdg/kcm-about-distrorc
 sed -i "s/@OCELADO_VERSION@/%{ocelado_version}/" %{buildroot}%{_sysconfdir}/xdg/kcm-about-distrorc
 install -D -m 0644 %{SOURCE27} %{buildroot}%{_prefix}/etc/transactional-update.conf.d/50-ocelado-reboot.conf
+# CA certificates where software built for SteamOS/Debian/Fedora looks for
+# them (Decky Loader's bundled Python, Decky plugins): openSUSE keeps them in
+# /etc/ssl/ca-bundle.pem only, so HTTPS failed with certificate errors
+# (e.g. the Panel de Control theme catalog). /etc/ssl/certs is managed by
+# update-ca-certificates and is left alone.
+mkdir -p %{buildroot}%{_sysconfdir}/ssl %{buildroot}%{_prefix}/lib/ssl
+ln -s ca-bundle.pem %{buildroot}%{_sysconfdir}/ssl/cert.pem
+ln -s ../../../etc/ssl/ca-bundle.pem %{buildroot}%{_prefix}/lib/ssl/cert.pem
+ln -s ../../../etc/ssl/certs %{buildroot}%{_prefix}/lib/ssl/certs
 # repository of Ocelado Linux (Tumbleweed repos come from openSUSE-repos)
 install -D -m 0644 %{SOURCE6} %{buildroot}%{_sysconfdir}/zypp/repos.d/ogc-handheld.repo
 # its signing key, next to the openSUSE ones (imported by the image build)
@@ -287,6 +300,10 @@ fi
 %config %{_sysconfdir}/xdg/kcm-about-distrorc
 %dir %{_prefix}/etc/transactional-update.conf.d
 %{_prefix}/etc/transactional-update.conf.d/50-ocelado-reboot.conf
+%{_sysconfdir}/ssl/cert.pem
+%dir %{_prefix}/lib/ssl
+%{_prefix}/lib/ssl/cert.pem
+%{_prefix}/lib/ssl/certs
 %dir %{_prefix}/lib/systemd
 %{_prefix}/lib/systemd/zram-generator.conf
 %dir %{_sysconfdir}/zypp
