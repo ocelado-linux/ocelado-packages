@@ -11,6 +11,10 @@ on:
         description: "Packages to sync (space separated, empty = all synced packages)"
         required: false
         default: ""
+      dry_run:
+        description: "Only show what would change on OBS"
+        type: boolean
+        default: false
 
 concurrency:
   group: obs-sync
@@ -70,4 +74,6 @@ jobs:
 
       - name: Sync to OBS
         if: steps.pkgs.outputs.packages != '' || github.event_name == 'workflow_dispatch'
+        env:
+          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '' }}
         run: bash scripts/sync-to-obs.sh ${{ steps.pkgs.outputs.packages }}
