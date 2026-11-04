@@ -10,7 +10,7 @@
 #
 
 Name:           ocelado-release
-Version:        1.24
+Version:        1.25
 Release:        0
 # Ocelado Linux release shown in os-release (IMAGE_VERSION)
 %define ocelado_version 0.3
@@ -49,7 +49,7 @@ Source24:       ocelado-gaming.modules
 Source25:       90-ocelado-gaming.conf
 # KDE "About this System": Ocelado logo, release and website
 Source26:       kcm-about-distrorc
-# transactional-update: no automatic reboots after updates
+# transactional-update: no automatic reboots, notify instead
 Source27:       50-ocelado-reboot.conf
 # fonts and scrollbar images are taken from the openSUSE theme
 BuildRequires:  grub2-branding-openSUSE
